@@ -1,0 +1,120 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    font-family: opensans;
+    font-size: 10pt;
+    color: #333;
+}
+
+select {
+    height: 20px;
+    padding: 10px;
+}
+
+svg {
+    position: absolute;
+    margin-top: 20px;
+}
+
+rect.questionRect {
+    fill:#efefef;
+    stroke:#bbb;
+    stroke-width:1;
+    cursor: pointer;
+}
+rect.endBar {
+    fill:#bbb;
+    stroke:#bbb;
+    stroke-width:1;
+    cursor: pointer;
+}
+
+rect.padding {
+    stroke: #ccc;
+    stroke-width: 1px;
+    stroke-dasharray: 5, 5;
+    fill: none;
+}
+
+.button {
+    cursor: pointer;
+}
+
+.container.collapsed > g,
+.container.error.collapsed .padding,
+.container.extra.collapsed .padding {
+    display: none;
+}
+
+/*
+.button.collapse {
+    stroke: #ccc;
+    stroke-width: 1;
+    fill: #fff;
+}
+
+.collapsed .collapse {
+    fill: #eee;
+}
+*/
+
+.collapseSymbol circle, .expandSymbol circle {
+    stroke: #ccc;
+    stroke-width: 1;
+    fill: #fff;
+}
+
+.collapseSymbol rect, .expandSymbol rect {
+    fill: #ccc;
+}
+
+.button.expand {
+    display: none;
+}
+
+.collapsed .button.expand {
+    display: block;
+}
+
+.collapsed .button.collapse {
+    display: none;
+}
+
+.edgeContainer path {
+    stroke: #ff9999;
+    fill: none;
+    stroke-width: 3;
+    marker-end: url(#arrowHead);
+    pointer-events: stroke;
+}
+
+.edgeContainer path:hover {
+    stroke-width: 5;
+    stroke: #ff99ff;
+}
+
+.edgeContainer path.hidden {
+    display: none;
+}
+
+.edgeContainer path.shortcut {
+    opacity: 0.7;
+    stroke-dasharray: 3, 2;
+}
+
+.edgeContainer path.shortcut:hover {
+    opacity: 1;
+}
+
+.arrowHead {
+    fill: #ff9999;
+    stroke-width: 0;
+    stroke: none;
+}
+
+svg text:hover {
+    text-decoration: underline;
+}
