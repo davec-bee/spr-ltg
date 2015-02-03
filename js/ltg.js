@@ -1,6 +1,7 @@
 var LTG = function () {
 
     var svgEl = document.getElementsByTagName('svg')[0];
+    var $graph = $('#graph');
 
     var questionVerticalGap = 15;
     var containerVerticalPadding = 15;
@@ -22,6 +23,9 @@ var LTG = function () {
 
     var ltgUtil = new LTGUtil(svgEl);
 
+    var groupTemplate = '<div class="container <%= classes %>"></div>';
+    var screenTemplate = '<div id="<%= id %>" class="screenGroup <%= classes %>"><div class="screen"><h3><%= name %></h3><br/><%= id %></div></div>';
+
     this.setJson = function (jsonString) {
         var jsonData = $.parseJSON(jsonString);
         if (jsonData) {
@@ -37,10 +41,10 @@ var LTG = function () {
         // first set up the dom & graph structure
         buildSVG(nodeGraph, svgEl);
 
-        edgePaths = new EdgePaths(svgEl, edgeContainer, nodeGraph);
+        //edgePaths = new EdgePaths(svgEl, edgeContainer, nodeGraph);
 
         // then perform measurement and visual layout on dom
-        this.draw();
+ //       this.draw();
     };
 
 
@@ -54,7 +58,7 @@ var LTG = function () {
 
         //edgges are applied on top of everything else. They should be 'dumb'
         // such that they don't have any knowledge of the graph
-        edgePaths.draw();
+        //edgePaths.draw();
 
         //reposition svg stage
 
@@ -268,36 +272,47 @@ var LTG = function () {
     //----------------------- CREATE ------------------------// 
 
 
-    function buildSVG(graph) {
+    function buildSVG() {
         clearSVG();
 
         //clear root nodes
         if (!rootContainer) {
             //build the first root node
-            rootContainer = ltgUtil.newSVGGroup('root container nonCollapsable');
-            createContainer(rootContainer);
-            svgEl.appendChild(rootContainer);
+
+            rootContainer = $(_.template(groupTemplate, { 
+                classes: 'root nonCollapsable'
+            }));
+
+            $graph.append( rootContainer );
+
+            //rootContainer = ltgUtil.newSVGGroup('root container nonCollapsable');
+            //createContainer(rootContainer);
+            //svgEl.appendChild(rootContainer);
         }
 
-        //build subsequent nodes that were not included in the main root
         createMainPaths(rootContainer);
-        //createQuestions();
-        //createContainers();
 
+        /*
         if (!edgeContainer) {
-            edgeContainer = ltgUtil.newSVGGroup('edgeContainer')
+            edgeContainer = ltgUtil.newSVGGroup('edgeContainer');
             svgEl.insertBefore(edgeContainer,rootContainer);
         }
+        */
     }
 
 
     function clearSVG() {
         clearEl(rootContainer);
-        clearEl(edgeContainer);
+        //clearEl(edgeContainer);
     }
 
 
     function clearEl(el) {
+        if (el && el.html) {
+            el.html('');
+            return;
+        }
+
         if (el && el.children) {
             while (el.children.length > 0) {
                 el.removeChild(el.children[0]);
@@ -406,33 +421,52 @@ var LTG = function () {
 
     function createQuestionGroup(container, node) {
         //skip if there already exists a group for this node
-        var existingQuestionGroup = document.getElementById(node.pageId);
-        if (existingQuestionGroup) {
+        var existingQuestionGroup = $('#' + node.pageId);
+        if (existingQuestionGroup && existingQuestionGroup.length > 0) {
             return;
         }
 
-        var newQuestion = ltgUtil.newSVGGroup('question', node.pageId);
-        createQuestion(newQuestion);
-        container.appendChild(newQuestion);
+        var newQuestion = $(_.template(screenTemplate, {
+            classes: node.page.isStart ? 'start' : node.page.isEnd ? 'end' : '', 
+            id: node.pageId,
+            name: node.page.name
+        }));
+        container.append(newQuestion);
 
+        /*
         if (node.hasGroups()) {
             createAlternateContainer(newQuestion, node)
         }
+        */
     }
 
     function createAlternateContainer(question, node) {
+        var errors = _.where(node.groups, {groupType: GroupTypes.MISCONCEPTION});
+        var corrects = _.where(node.groups, {groupType: GroupTypes.EXTRA});
+
+        var errorContainer;
+        var correctContainer;
+
         _.each(node.groups, function (nodeGroup) {
-            var appendType;
+            var newContainer = $(_.template(groupTemplate, { classes: ''}));
             if (nodeGroup.groupType === GroupTypes.MISCONCEPTION) {
-                appendType = 'error';
+
+                if (!errorContainer) {
+                    errorContainer = $('<div>').addClass('errorContainer');
+                    question.append(errorContainer);
+                }
+                errorContainer.append(newContainer);
             } else if (nodeGroup.groupType === GroupTypes.EXTRA) {
                 appendType = 'extra';
-            }
-            var newContainer = ltgUtil.newSVGGroup('container ' + appendType);
-            createContainer(newContainer);
-            question.appendChild(newContainer);
 
-            var nodes = nodeGroup.nodePath
+                if (!correctContainer) {
+                    correctContainer = $('<div>').addClass('correctContainer');
+                    question.append(correctContainer);
+                }
+                correctContainer.append(newContainer);
+            }
+
+            var nodes = nodeGroup.nodePath;
             _.each(nodes, function (subNode) {
                 if (subNode.pageId !== node.pageId) {
                     createQuestionGroup(newContainer, subNode);
@@ -443,6 +477,25 @@ var LTG = function () {
     }
 
 
+    function createQuestionBranch(parentGroup, nodeBranch) {
+        var newBranch = $('<div class="branch"></div>');
+        parentGroup.append(newBranch);
+
+        _.each(nodeBranch.nodePaths, function (nodePath) {
+            createNodePath(parentGroup, nodePath);
+        });
+    }
+
+    function createNodePath(parentGroup, nodePath) {
+        _.each(nodePath, function (node) {
+            if (node.page) {
+                createQuestionGroup(parentGroup, node);
+            } else {
+                createQuestionBranch(parentGroup, node);
+            }
+        });
+    }
+
 
     function createMainPaths(rootEl) {
         var startPage = nodeGraph.getStartingPage();
@@ -451,7 +504,7 @@ var LTG = function () {
         createMainPath(rootEl, startPageId);
 
         _.each(nodeGraph.nodes, function (node) {
-            var nodeEl = document.getElementById(node.pageId);
+            var nodeEl = $('#' + node.pageId);
             if (!nodeEl) {
                 createMainPath(rootEl, node.pageId);
             }
@@ -460,15 +513,22 @@ var LTG = function () {
 
 
     function createMainPath(rootEl, startPageId) {
-        var mainPathGroup = ltgUtil.newSVGGroup('main container');
-        createContainer(mainPathGroup);
+        var mainPathGroup = $(_.template(groupTemplate, {
+            classes: 'main'
+        }));
+        
+        rootEl.append(mainPathGroup);
 
+
+        /*
         var nodeGroup = nodeGraph.createNodeGroupByPageId(startPageId);
         _.each(nodeGroup.nodePath, function (node) {
             createQuestionGroup(mainPathGroup, node);
         }, this);
+        */
 
-        rootEl.appendChild(mainPathGroup);
+        var nodePath = nodeGraph.createNodePathByPageId(startPageId);
+        createNodePath(mainPathGroup, nodePath);
     }
 
 

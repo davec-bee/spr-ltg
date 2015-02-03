@@ -109,11 +109,12 @@ var NodeGraph = function (pages) {
         //Traverse the new nodePath and build more nodeGroups for each
         // node as needed
         _.each(nodeGroup.nodePath, function (node) {
-            pathLog(node.pageId, groupType, depth);
+            //pathLog(node.pageId, groupType, depth);
 
             var extras = [];
 
             //Find any extra pathways and build the corresponding group type
+            /*
             _.each(getExtra(node.page), function (id) {
                 var subNode = this.getNodeByPageId(id);
                 if (subNode.hasDepth()) {
@@ -123,6 +124,7 @@ var NodeGraph = function (pages) {
                     extras.push(id);
                 }
             }, this);
+            */
 
             var misconceptions = [];
 
@@ -168,7 +170,7 @@ var NodeGraph = function (pages) {
     */
     function getSubPathFromPageId (pageId, parentPath) {
         var subPath = [];
-        var id;
+        var ids;
         var page = _this.getPageById(pageId);
         subPath.push(pageId);
 
@@ -197,6 +199,8 @@ var NodeGraph = function (pages) {
              depth value
 
             */
+
+            /* OLD
             id = getNextPageId(page)[0];
             if ((parentPath && parentPath.indexOf(id) > -1) 
                 || subPath.indexOf(id) > -1
@@ -205,6 +209,30 @@ var NodeGraph = function (pages) {
             }
             subPath.push(id);
             page = _this.getPageById(id);
+            */
+
+
+            ids = getNextPageId(page);
+            if (ids.length === 1) {
+                //single correct path
+
+                if ((parentPath && parentPath.indexOf(id) > -1) || 
+                    subPath.indexOf(id) > -1 || 
+                    id === pageId)
+                    break;
+
+                subPath.push(id);
+                page = _this.getPageById(id);
+            } else {
+                //multiple correct paths
+
+                var id, i;
+                for (i=0; i < ids.length; i++) {
+                    id = ids[i];
+
+
+                }
+            }
         }
 
         return subPath;
@@ -284,7 +312,7 @@ var NodeGraph = function (pages) {
         //FIXME: Include ALT_CORRECT / EXTRA groupTypes here in 
         // the case that default correct is disabled, or when 
         // dealing with branching scenarios
-        var defaults = page[GroupTypes.DEFAULT_CORRECT];
+        var defaults = page[GroupTypes.EXTRA];
 
         if (defaults === undefined || defaults.length === 0) {
             defaults = getExtra(page);

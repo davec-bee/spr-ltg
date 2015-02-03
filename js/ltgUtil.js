@@ -62,11 +62,19 @@ var LTGUtil = function (svgEl) {
 
 
     this.hasClass = function (el,className) {
+        if (el.hasClass) {
+            return el.hasClass(className);
+        }
+
         var classes = el.getAttribute('class');
         return classes && classes.indexOf(className) > -1;
     } 
 
     this.addClass = function (el, className) {
+        if (el.addClass) {
+            return el.addClass(className);
+        }
+
         var existingClasses = el.getAttribute('class');
         if (existingClasses === undefined || existingClasses === null) {
             el.setAttribute('class', className);
@@ -76,6 +84,11 @@ var LTGUtil = function (svgEl) {
     }
 
     this.removeClass = function (el, className) {
+        if (el.removeClass) {
+            return el.removeClass(className);
+        }
+
+
         if (this.hasClass(el, className)) {
             el.setAttribute('class', el.getAttribute('class').replace(className, ''));
         }
@@ -154,6 +167,7 @@ var LTGUtil = function (svgEl) {
 
     this.newSVGGroup = function (cssClasses, id) {
         var g = document.createElementNS(this.svgNS, 'g');
+
         if (id) { 
             g.setAttribute('id', id);
         }
